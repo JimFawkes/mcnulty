@@ -1,0 +1,9 @@
+compose/*
+data/*
+logs/*
+.git
+.vscode
+README.md
+.env*
+Presentation/
+*.pk
