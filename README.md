@@ -75,12 +75,16 @@ Tables:
  - Borough,Zone,
  - service_zone
 
-Possible Additinal Data:
 Weather
- - Temperature
- - Sun/Cloud/Rain/Snow
- - Wind?
+Daily summaries provided by [National Centers For Environmental Information](https://www.ncdc.noaa.gov/)
 
+ - Temperature (Min,Max,AVG) - Celsius
+ - Percipitation - mm
+ - Sunshine duration - minutes
+ - Snow - mm
+ - Windspeed average - km/h
+
+Possible Additinal Data:
 Locations
  - type (business/residential)
 
