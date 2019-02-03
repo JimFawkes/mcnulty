@@ -2,15 +2,40 @@
 
 
 """
+from mcnulty.db.connect import open_cursor
 
 from dataclasses import dataclass
 import datetime
 
 
 class BaseDataClass:
-    def save(self):
+    def _create_insert_query(self):
+
+        column_names = ""
+        row_values = ""
+        for column_name, row_value in self.__dict__.items():
+
+            if column_name.startswith("_"):
+                continue
+
+            column_names += str(column_name) + ", "
+            row_values += str(row_value) + ", "
+
+        columns = "(" + column_names[:-2] + ")"
+        values = "(" + row_values[:-1] + ")"
+
+        query = f"INSERT INTO {self._table_name} {columns} VALUES {values};"
+
+        return query
+
+    def save(self, commit=True):
         """Store conent to database."""
-        pass
+        query = self._create_insert_query()
+
+        with open_cursor() as cursor:
+            cursor.execute(query)
+            if commit:
+                cursor.commit()
 
 
 @dataclass(order=True)
