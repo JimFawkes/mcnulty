@@ -13,16 +13,23 @@ config = Config()
 
 @contextmanager
 def open_connection():
-    connection = psycopg2.connect(config.db_data)
+    connection = psycopg2.connect(**config.db_data)
     yield connection
     connection.close()
 
 
 @contextmanager
 def open_cursor(_connection=None):
-    """Ensure that the cursor and the connection are always closed."""
+    """Ensure that the cursor and the connection are always closed.
+    
+    This should be thread-safe, requires tests.
+
+    TODO: Test special cases and catch them.
+    
+    """
+    #     async with config.async_lock:
     if not _connection:
-        connection = psycopg2.connect(config.db_data)
+        connection = psycopg2.connect(**config.db_data)
         cursor = connection.cursor()
     else:
         cursor = _connection.cursor()
@@ -50,11 +57,3 @@ def run_from_script(filename, query_data=None, commit=False):
 
             if commit:
                 cursor.commit()
-
-
-# def run_query(query, query_data, commit=False):
-#     with open_cursor() as cursor:
-#         cursor.execute(query, query_data)
-
-#         if commit:
-#             cursor.commit()
