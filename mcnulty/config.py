@@ -6,6 +6,7 @@ from loguru import logger
 from pathlib import Path
 from dotenv import load_dotenv
 import os
+import asyncio
 
 load_dotenv()
 
@@ -27,11 +28,12 @@ class Config:
     """Configurations for mcnulty"""
 
     def __init__(self):
-        self.db_host = os.getenv("DB_HOST", default="127.0.0.1")
-        self.db_port = int(os.getenv("DB_PORT", default="5432"))
-        self.db_name = os.getenv("DB_NAME", default="postgres")
-        self.db_user = os.getenv("DB_USER", default="postgres")
-        self.db_password = os.getenv("DB_PASSWORD", default="")
+        self.db_host = os.getenv("POSTGRES_HOST", default="127.0.0.1")
+        self.db_port = int(os.getenv("POSTGRES_PORT", default="5432"))
+        self.db_name = os.getenv("POSTGRES_NAME", default="postgres")
+        self.db_user = os.getenv("POSTGRES_USER", default="postgres")
+        self.db_password = os.getenv("POSTGRES_PASSWORD", default="")
+        self.async_lock = asyncio.Lock()
 
     def __repr__(self):
         return "Config()"
