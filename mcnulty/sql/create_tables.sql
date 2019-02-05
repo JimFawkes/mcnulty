@@ -64,3 +64,10 @@ CREATE TABLE IF NOT EXISTS taxi_trip_features (
     trip_duration       INTERVAL,
     avg_speed           FLOAT CHECK (avg_speed >= 0) NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS taxi_trip_file_downloads (
+    id                      SERIAL PRIMARY KEY,
+    filename                VARCHAR(256) NOT NULL UNIQUE,
+    datetime_processed      TIMESTAMP NOT NULL,
+    is_processed            BOOL DEFAULT false
+)
