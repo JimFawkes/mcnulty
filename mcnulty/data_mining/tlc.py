@@ -11,7 +11,11 @@ import csv
 from loguru import logger
 import asyncio
 
-from mcnulty.data_types import TaxiTripFileDownloads
+from data_types import TaxiTripFileDownloads
+from base import DoesNotExist
+from config import Config
+
+config = Config()
 
 _log_file_name = __file__.split("/")[-1].split(".")[0]
 logger.add(f"logs/{_log_file_name}.log", rotation="1 day")
@@ -92,21 +96,25 @@ def handle_data_rows_from_file(filename, handler, *handler_args):
     """
     logger.info(f"Start reading from: {filename}")
 
-    loaded_file = TaxiTripFileDownloads(filename=filename)
-    if loaded_file.is_complete:
-        logger.warning(
-            f"Already retrieved this file on {loaded_file.datetime_processed}."
-        )
-        return None
+    try:
+        loaded_file = TaxiTripFileDownloads.get(filename=filename)
+        if loaded_file.is_complete:
+            logger.warning(
+                f"Already retrieved this file on {loaded_file.datetime_processed}."
+            )
+            return None
+    except DoesNotExist:
+        logger.info(f"File not found in DB, continue...")
 
     event_loop = asyncio.get_event_loop()
 
-    with open(filename) as fp:
+    with open(config.data_dir / filename) as fp:
         reader = csv.reader(fp, delimiter=",", quotechar='"')
         for row in reader:
             _handler_args = row, *handler_args
             call_in_background(handler, *_handler_args, loop=event_loop)
 
+    # TODO: This is not executed. WHY?
     TaxiTripFileDownloads.create(
         id=None,
         filename=filename,

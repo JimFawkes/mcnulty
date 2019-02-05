@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import datetime
 from loguru import logger
 
-from mcnulty.base import BaseDataClass, DoesNotExist
+from base import BaseDataClass, DoesNotExist
 
 _log_file_name = __file__.split("/")[-1].split(".")[0]
 logger.add(f"logs/{_log_file_name}.log", rotation="1 day")

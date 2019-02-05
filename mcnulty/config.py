@@ -10,6 +10,9 @@ import asyncio
 
 load_dotenv()
 
+ROOT_DIR = Path.cwd()
+PROJECT_DIR = ROOT_DIR / "mcnulty"
+
 
 def singleton(cls):
     """Ensure that only one instance of the class ever exists."""
@@ -34,6 +37,10 @@ class Config:
         self.db_user = os.getenv("POSTGRES_USER", default="postgres")
         self.db_password = os.getenv("POSTGRES_PASSWORD", default="")
         self.async_lock = asyncio.Lock()
+        self.root_dir = ROOT_DIR
+        self.project_dir = PROJECT_DIR
+        self.data_dir = os.getenv("DATA_DIR", default=None) or self.root_dir / "data/"
+        self.log_dir = os.getenv("LOG_DIR", default=None) or self.root_dir / "logs/"
 
     def __repr__(self):
         return "Config()"

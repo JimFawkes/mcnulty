@@ -5,9 +5,10 @@ import psycopg2
 from loguru import logger
 from contextlib import contextmanager
 
-from mcnulty.config import Config
+from config import Config
 
-# logger.add()
+_log_file_name = __file__.split("/")[-1].split(".")[0]
+logger.add(f"logs/{_log_file_name}.log", rotation="1 day")
 config = Config()
 
 
@@ -43,17 +44,20 @@ def open_cursor(_connection=None):
 
 def run_from_script(filename, query_data=None, commit=False):
     """Run SQL query from filename."""
+    logger.info(f"Run {filename} on DB.")
 
     with open(filename, "r") as sql_file:
         sql = sql_file.read()
 
     sql_commands = sql.split(";")
-    with open_cursor() as cursor:
-        for sql_command in sql_commands:
-            if query_data:
-                cursor.execute(sql_command, query_data)
-            else:
-                cursor.execute(sql_command)
+    with open_connection() as conn:
+        with open_cursor(conn) as cursor:
+            for sql_command in sql_commands:
+                if query_data:
+                    cursor.execute(sql_command, query_data)
+                else:
+                    cursor.execute(sql_command)
 
-            if commit:
-                cursor.commit()
+                if commit:
+                    logger.info(f"Committing: {sql_command}")
+                    conn.commit()

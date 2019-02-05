@@ -7,9 +7,17 @@ import argparse
 import sys
 from loguru import logger
 
-from mcnulty.data_mining import tlc
-from mcnulty.data_types import Location
-from mcnulty.handlers.data_type_handlers import clean_and_store
+from data_mining import tlc
+import data_types as dt
+from handlers.data_type_handlers import clean_and_store
+from db.connect import run_from_script
+from data_mining.tlc import handle_data_rows_from_file
+from config import Config
+
+_log_file_name = __file__.split("/")[-1].split(".")[0]
+logger.add(f"logs/{_log_file_name}.log", rotation="1 day")
+
+config = Config()
 
 help_text = """
 Project McNulty - Metis
@@ -27,20 +35,23 @@ The pipeline consists fo the following steps:
     5.) Validation !!! NOT YET IMPLEMENTED
     6.) Visualization !!! NOT YET IMPLEMENTED
 
+
 """
 
 epilog = """
+
 Written as first draft by Moritz Eilfort.
+
 """
 
-data_types = [
-    "Location",
-    "PaymentTypes",
-    "RateCodes",
-    "LocationCoordinates",
-    "Weather",
-    "TaxiTrip",
-]
+data_types = {
+    "Location": dt.Location,
+    "PaymentTypes": dt.PaymentTypes,
+    "RateCodes": dt.RateCodes,
+    "LocationCoordinates": dt.LocationCoordinates,
+    "Weather": dt.Weather,
+    "TaxiTrip": dt.TaxiTrip,
+}
 
 parser = argparse.ArgumentParser(
     prog="mcnulty",
@@ -73,7 +84,7 @@ parser.add_argument(
 
 parser.add_argument(
     "--type",
-    choices=data_types,
+    choices=data_types.keys(),
     help="Define what type of data is expected from the source.",
 )
 
@@ -95,21 +106,29 @@ def main():
     logger.debug(f"Starting Pipline")
 
     if args.create_tables:
-        logger.debug("Create Tables")
+        logger.debug(f"Create Tables ({args.create_tables}).")
+        run_from_script(config.project_dir / "sql/create_tables.sql", commit=True)
         sys.exit(0)
 
     if args.read_from_file:
         if not args.type:
             parser.error("--read_from_file requires --type.")
 
-        logger.debug("Read From File")
+        filename = args.read_from_file
+        _type = args.type
+
+        logger.debug(f"Read From File. filename: {filename}, type: {_type}")
+        handle_data_rows_from_file(filename, clean_and_store, data_types[_type])
+
         sys.exit(0)
 
     if args.read_from_url:
         if not args.type:
             parser.error("--read_from_url requires --type.")
 
-        logger.debug("Read From URL")
+        url = args.read_from_url
+        _type = args.type
+        logger.debug(f"Read From URL: {url}, type: {_type}")
         sys.exit(0)
 
     if args.type:

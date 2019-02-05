@@ -2,7 +2,7 @@ from psycopg2 import ProgrammingError, IntegrityError
 import datetime
 from loguru import logger
 
-from mcnulty.db.connect import open_cursor, open_connection
+from db.connect import open_cursor, open_connection
 
 
 _log_file_name = __file__.split("/")[-1].split(".")[0]
@@ -85,7 +85,7 @@ class BaseDataClass:
                     logger.warning(f"Could not save: {self}")
                     logger.error(e)
 
-        self.id = cls.get(**self.__dict__)[0]
+        self.id = self.get(**self.__dict__)
         return self
 
     def clean(self):
@@ -150,6 +150,10 @@ class BaseDataClass:
     def get(cls, **kwargs):
         logger.debug(f"Get: {cls}")
         rows = cls._get_rows(**kwargs)
+        logger.debug(f"Rows: {rows}")
+
+        if not rows:
+            raise DoesNotExist(f"{cls}({kwargs}")
 
         if len(rows) > 1:
             raise MultipleRowsError(f"Got {len(rows)} entries in {cls}.get()")
