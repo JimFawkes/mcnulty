@@ -2,40 +2,15 @@
 
 
 """
-from mcnulty.db.connect import open_cursor
 
 from dataclasses import dataclass
 import datetime
+from loguru import logger
 
+from mcnulty.base import BaseDataClass, DoesNotExist
 
-class BaseDataClass:
-    def _create_insert_query(self):
-
-        column_names = ""
-        row_values = ""
-        for column_name, row_value in self.__dict__.items():
-
-            if column_name.startswith("_"):
-                continue
-
-            column_names += str(column_name) + ", "
-            row_values += str(row_value) + ", "
-
-        columns = "(" + column_names[:-2] + ")"
-        values = "(" + row_values[:-1] + ")"
-
-        query = f"INSERT INTO {self._table_name} {columns} VALUES {values};"
-
-        return query
-
-    def save(self, commit=True):
-        """Store conent to database."""
-        query = self._create_insert_query()
-
-        with open_cursor() as cursor:
-            cursor.execute(query)
-            if commit:
-                cursor.commit()
+_log_file_name = __file__.split("/")[-1].split(".")[0]
+logger.add(f"logs/{_log_file_name}.log", rotation="1 day")
 
 
 @dataclass(order=True)
@@ -108,6 +83,29 @@ class TaxiTrip(BaseDataClass):
     store_and_fwd_flag: bool
     _table_name = "taxi_trip"
 
+    def create_features(self):
+        if self.id is None:
+            raise DoesNotExist(
+                f"{self} has no id. Maybe this needs to be saved to the db first."
+            )
+        trip_duration = (self.dropoff_datetime - self.pickup_datetime).hours
+        avg_speed = self.trip_distance / trip_duration
+        taxi_trip_id = self.id
+
+        # TODO: GET OWN ID
+
+        TaxiTripFeatures.create(
+            {
+                "taxi_trip_id": taxi_trip_id,
+                "trip_duration": trip_duration,
+                "avg_speed": avg_speed,
+            }
+        )
+
+    def save(self, commit=True):
+        super().save(commit=commit)
+        self.create_features()
+
 
 @dataclass(order=True)
 class TaxiTripFeatures(BaseDataClass):
@@ -116,3 +114,11 @@ class TaxiTripFeatures(BaseDataClass):
     trip_duration: datetime.timedelta
     avg_speed: float
     _table_name = "taxi_trip_features"
+
+
+class TaxiTripFileDownloads(BaseDataClass):
+    id: int = None
+    filename: str
+    datetime_processed: datetime.datetime
+    is_complete: bool
+    _table_name = "taxi_trip_file_downloads"
