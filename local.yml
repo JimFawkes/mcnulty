@@ -1,0 +1,26 @@
+version: "3"
+services:
+  mcnulty:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    links:
+      - postgres
+    volumes:
+      - ./data/:/usr/src/app/data/
+      - ./logs/:/usr/src/app/logs/
+
+  postgres:
+    image: postgres:10.6
+    ports:
+      - 5432:5432
+    volumes:
+      - ~/Data/postgres/data:/var/lib/postgresql/data
+      - ~/Data/postgres/backup:/backups
+    env_file: .env
+    # environment:
+    #   - POSTGRES_HOST: ${DB_HOST}
+    #   - POSTGRES_PORT: ${DB_PORT}
+    #   - POSTGRES_NAME: ${DB_NAME}
+    #   - POSTGRES_USER: ${DB_USER}
+    #   - POSTGRES_PASSWORD: ${DB_PASSWORD}
