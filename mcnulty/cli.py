@@ -11,7 +11,7 @@ from data_mining import tlc
 import data_types as dt
 from handlers.data_type_handlers import clean_and_store
 from db.connect import run_from_script
-from data_mining.tlc import handle_data_rows_from_file
+from data_mining.tlc import handle_data_rows_from_file, handle_data_rows_from_url
 from config import Config
 
 _log_file_name = __file__.split("/")[-1].split(".")[0]
@@ -71,6 +71,12 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--drop_tables", action="store_true", help="Drop all tables in the database."
+)
+
+parser.add_argument("--run_pipeline", action="store_true", help="Run pipeline.")
+
+parser.add_argument(
     "--read_from_file",
     help="Read data from local file, clean, validate and store the data.",
     type=str,
@@ -101,40 +107,70 @@ parser.add_argument(
 parser.add_argument("--upload_logs", action="store_true", help="Upload logs to S3.")
 
 
+def create_tables():
+    run_from_script(config.project_dir / "sql/create_tables.sql", commit=True)
+
+
+def drop_tables():
+    run_from_script(config.project_dir / "sql/drop_tables.sql", commit=True)
+
+
+def read_from_file(filename, type_):
+    logger.debug(f"Read From File. filename: {filename}, type: {type_}")
+    handle_data_rows_from_file(filename, clean_and_store, data_types[type_])
+
+
+def read_from_url(url, type_):
+    logger.debug(f"Read From URL: {url}, type: {type_}")
+    handle_data_rows_from_url(url, clean_and_store, data_types[type_])
+
+
+def run_pipeline():
+    drop_tables()
+    create_tables()
+    read_from_file("tlc_rate_codes.csv", "RateCodes")
+    read_from_file("tlc_payment_types.csv", "PaymentTypes")
+    read_from_file("taxi_zone_lookup.csv", "Location")
+    read_from_file("nyc_weather_2009_2019.csv", "Weather")
+    read_from_url(
+        "https://s3.amazonaws.com/nyc-tlc/trip+data/yellow_tripdata_2016-12.csv",
+        "TaxiTrip",
+    )
+
+
 def main():
     args = parser.parse_args()
     logger.debug(f"Starting Pipline")
 
     if args.create_tables:
-        logger.debug(f"Create Tables ({args.create_tables}).")
-        run_from_script(config.project_dir / "sql/create_tables.sql", commit=True)
+        create_tables()
+        sys.exit(0)
+
+    if args.drop_tables:
+        drop_tables()
+        sys.exit(0)
+
+    if args.run_pipeline:
+        run_pipeline()
         sys.exit(0)
 
     if args.read_from_file:
         if not args.type:
             parser.error("--read_from_file requires --type.")
-
-        filename = args.read_from_file
-        _type = args.type
-
-        logger.debug(f"Read From File. filename: {filename}, type: {_type}")
-        handle_data_rows_from_file(filename, clean_and_store, data_types[_type])
-
+        read_from_file(args.read_from_file, args.type)
         sys.exit(0)
 
     if args.read_from_url:
         if not args.type:
             parser.error("--read_from_url requires --type.")
-
-        url = args.read_from_url
-        _type = args.type
-        logger.debug(f"Read From URL: {url}, type: {_type}")
+        read_from_url(args.read_from_url, args.type)
         sys.exit(0)
 
     if args.type:
         parser.error(
             "--type can only be set in combination with --read_from_url or --read_from_file"
         )
+        sys.exit(1)
 
     if args.model:
         logger.warning(f"Modeling part is not yet implemented.")
