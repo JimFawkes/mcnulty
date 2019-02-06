@@ -4,6 +4,7 @@ Download csv files one by one.
 Store the information which file was downloaded in the db.
 
 """
+import time
 import datetime
 import requests
 from contextlib import closing
@@ -29,7 +30,7 @@ def create_tlc_url_from_data(month, year, type_="yellow"):
     return TLC_BASE_URL + filename
 
 
-def stream_data_rows_handler(src_url, handler, *handler_args):
+def handle_data_rows_from_url(src_url, handler, *handler_args):
     """Stream data from url and pass each row to a handler.
 
     src_url: Source url from where to read the file.
@@ -50,12 +51,15 @@ def stream_data_rows_handler(src_url, handler, *handler_args):
 
     url_copy = src_url
     filename = url_copy.split("/")[-1]
-    downloaded_file = TaxiTripFileDownloads(filename=filename)
-    if downloaded_file.is_complete:
-        logger.warning(
-            f"Already retrieved this file on {downloaded_file.datetime_processed}."
-        )
-        return None
+    try:
+        loaded_file = TaxiTripFileDownloads.get(filename=filename)
+        if loaded_file.is_processed:
+            logger.warning(
+                f"Already retrieved this file on {loaded_file.datetime_processed}."
+            )
+            return None
+    except DoesNotExist:
+        logger.info(f"File not found in DB, continue...")
 
     event_loop = asyncio.get_event_loop()
 
@@ -72,7 +76,7 @@ def stream_data_rows_handler(src_url, handler, *handler_args):
         id=None,
         filename=filename,
         datetime_processed=datetime.datetime.utcnow(),
-        is_complete=False,
+        is_processed=True,
     )
     logger.info(f"Finished streaming from {src_url}")
     return None
@@ -98,7 +102,7 @@ def handle_data_rows_from_file(filename, handler, *handler_args):
 
     try:
         loaded_file = TaxiTripFileDownloads.get(filename=filename)
-        if loaded_file.is_complete:
+        if loaded_file.is_processed:
             logger.warning(
                 f"Already retrieved this file on {loaded_file.datetime_processed}."
             )
@@ -115,11 +119,12 @@ def handle_data_rows_from_file(filename, handler, *handler_args):
             call_in_background(handler, *_handler_args, loop=event_loop)
 
     # TODO: This is not executed. WHY?
-    TaxiTripFileDownloads.create(
+    time.sleep(2)
+    ttfd = TaxiTripFileDownloads.create(
         id=None,
         filename=filename,
         datetime_processed=datetime.datetime.utcnow(),
-        is_complete=False,
+        is_processed=True,
     )
     logger.info(f"Finished reading from {filename}")
     return None

@@ -14,32 +14,36 @@ config = Config()
 
 @contextmanager
 def open_connection():
+    """Ensure that the the connection is always closed.
+    
+    This is not thread-safe, requires investigation.
+
+    """
     connection = psycopg2.connect(**config.db_data)
     yield connection
     connection.close()
 
 
+# def wait_for_release(func):
+#     def wrapped_func(*args, **kwargs):
+#         await config.async_lock.acquire()
+#         try:
+#             result = func(*args, **kwargs)
+#         finally:
+#             config.async_lock.release()
+
+#         return result
+#     return wrapped_func
+
+
 @contextmanager
 def open_cursor(_connection=None):
-    """Ensure that the cursor and the connection are always closed.
-    
-    This should be thread-safe, requires tests.
+    """Ensure that the cursor is always closed.
 
-    TODO: Test special cases and catch them.
-    
     """
-    #     async with config.async_lock:
-    if not _connection:
-        connection = psycopg2.connect(**config.db_data)
-        cursor = connection.cursor()
-    else:
-        cursor = _connection.cursor()
-
+    cursor = _connection.cursor()
     yield cursor
-
     cursor.close()
-    if _connection:
-        _connection.close()
 
 
 def run_from_script(filename, query_data=None, commit=False):
@@ -49,10 +53,11 @@ def run_from_script(filename, query_data=None, commit=False):
     with open(filename, "r") as sql_file:
         sql = sql_file.read()
 
-    sql_commands = sql.split(";")
+    sql_commands = sql.split(";")[:-1]
     with open_connection() as conn:
         with open_cursor(conn) as cursor:
             for sql_command in sql_commands:
+                sql_command += ";"
                 if query_data:
                     cursor.execute(sql_command, query_data)
                 else:

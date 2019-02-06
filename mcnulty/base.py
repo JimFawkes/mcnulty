@@ -25,11 +25,15 @@ class DoesNotExist(Exception):
     pass
 
 
+type_map = {str: "%s", int: "%d", float: "%f"}
+
+
 class BaseDataClass:
     def _create_insert_query(self):
 
         column_names = ""
         row_values = ""
+        values = []
         for column_name, row_value in self.__dict__.items():
 
             if column_name.startswith("_"):
@@ -40,20 +44,25 @@ class BaseDataClass:
                 continue
 
             column_names += str(column_name) + ", "
-            row_values += "'" + str(row_value) + "'" + ", "
+            row_values += "%s, "
+            values.append(row_value)
 
         columns = "(" + column_names[:-2] + ")"
-        values = "(" + row_values[:-2] + ")"
+        values_reprs = "(" + row_values[:-2] + ")"
 
-        query = f"INSERT INTO {self._table_name} {columns} VALUES {values};"
+        query = f"INSERT INTO {self._table_name} {columns} VALUES {values_reprs} RETURNING id;"
 
-        return query
+        return query, values
 
     @classmethod
     def _create_select_query(cls, **kwargs):
 
         key_value_pairs = ""
         for key, value in kwargs.items():
+
+            if value is None:
+                continue
+
             key_value_pairs += f"{key} = '{value}' AND "
 
         key_value_pairs = key_value_pairs[:-5]
@@ -62,7 +71,7 @@ class BaseDataClass:
 
         return query
 
-    def save(self, commit=True):
+    def save(self, commit=True, with_get=True):
         """Store conent to database.
         This should be thread safe  by using asyncio's Lock in open_cursor.
 
@@ -70,22 +79,28 @@ class BaseDataClass:
         """
         self.validate()
         logger.debug(f"Save: {self}")
-        query = self._create_insert_query()
+        query, values = self._create_insert_query()
 
         with open_connection() as conn:
             with open_cursor(conn) as cursor:
                 try:
-                    cursor.execute(query)
+
+                    cursor.execute(query, tuple(values))
+                    if with_get:
+                        _id = cursor.fetchone()[0]
+                        logger.debug(f"Saved value with id: {_id}")
+                        self.id = _id or self.id
+                        if not self.id:
+                            logger.warning(f"Returned with an empty id. {self}")
                     if commit:
                         conn.commit()
+
                 except ProgrammingError as e:
                     logger.error(e)
                     raise DataTypeSaveError
                 except IntegrityError as e:
                     logger.warning(f"Could not save: {self}")
                     logger.error(e)
-
-        self.id = self.get(**self.__dict__)
         return self
 
     def clean(self):
@@ -100,6 +115,8 @@ class BaseDataClass:
                 if key == "id" and fields[key] is None:
                     # Pass None to id and allow the DB to increment it.
                     continue
+                if key in self._ignore_fields:
+                    continue
                 try:
                     self.__dict__[key] = annotations[key](fields[key])
                 except (TypeError, ValueError) as e:
@@ -112,16 +129,14 @@ class BaseDataClass:
                     )
 
     @classmethod
-    def _prepare(cls, **kwargs):
-
-        return kwargs
+    def prepare(cls, *args):
+        return args
 
     @classmethod
-    def create(cls, **kwargs):
-        prepared_kwargs = cls._prepare(**kwargs)
-        inst = cls(**prepared_kwargs)
+    def create(cls, with_get=False, **kwargs):
+        inst = cls(**kwargs)
         inst.clean()
-        inst.save()
+        inst.save(with_get=with_get)
         return inst
 
     @classmethod
@@ -164,3 +179,7 @@ class BaseDataClass:
             row = rows
 
         return cls(*row)
+
+    def get_id(self):
+        logger.debug(f"Get own id: {self}.")
+        return self.__class__.get(**self.__dict__).id

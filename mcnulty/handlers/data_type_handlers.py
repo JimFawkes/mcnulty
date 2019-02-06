@@ -18,10 +18,11 @@ def location_handler(row, *args):
 @logger.catch
 def clean_and_store(data, DataType, *args):
     logger.debug(f"handling: {DataType.__name__}({data})")
-    dt = DataType(*data)
+    prepared_data = DataType.prepare(*data)
+    dt = DataType(*prepared_data)
     dt.clean()
     try:
-        dt.save()
+        dt.save(with_get=False)
     except DataTypeSaveError as e:
         logger.debug(f"TODO: Store {data} in file.")
 
