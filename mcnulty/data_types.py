@@ -171,7 +171,7 @@ class TaxiTrip(BaseDataClass):
             **{
                 "id": None,
                 "pu_date": self.pickup_datetime.date(),
-                "do_date": self.do_datetime.date(),
+                "do_date": self.dropoff_datetime.date(),
                 "taxi_trip_id": taxi_trip_id,
                 "trip_duration": trip_duration,
                 "avg_speed": avg_speed,
