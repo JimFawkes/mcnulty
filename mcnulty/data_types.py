@@ -152,7 +152,7 @@ class TaxiTrip(BaseDataClass):
 
     @classmethod
     def prepare(cls, *args):
-        return [None] + list(args)[:-2]
+        return [None] + list(args)
 
     def create_features(self):
         if self.id is None:
