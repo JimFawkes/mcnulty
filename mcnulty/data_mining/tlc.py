@@ -30,7 +30,7 @@ def create_tlc_url_from_data(month, year, type_="yellow"):
     return TLC_BASE_URL + filename
 
 
-def handle_data_rows_from_url(src_url, handler, *handler_args):
+def handle_data_rows_from_url(src_url, handler, _dtype, bg=False, *handler_args):
     """Stream data from url and pass each row to a handler.
 
     src_url: Source url from where to read the file.
@@ -69,8 +69,11 @@ def handle_data_rows_from_url(src_url, handler, *handler_args):
             r.iter_lines(decode_unicode=True), delimiter=",", quotechar='"'
         )
         for row in reader:
-            _handler_args = row, *handler_args
-            call_in_background(handler, *_handler_args, loop=event_loop)
+            _handler_args = row, _dtype, *handler_args
+            if bg:
+                call_in_background(handler, *_handler_args, loop=event_loop)
+            else:
+                handler(*_handler_args)
 
     TaxiTripFileDownloads.create(
         id=None,
@@ -82,7 +85,7 @@ def handle_data_rows_from_url(src_url, handler, *handler_args):
     return None
 
 
-def handle_data_rows_from_file(filename, handler, *handler_args):
+def handle_data_rows_from_file(filename, handler, _dtype, bg=False, *handler_args):
     """Read data from file and pass each row to a handler.
 
     filename: Source filename from where to read the data.
@@ -115,8 +118,11 @@ def handle_data_rows_from_file(filename, handler, *handler_args):
     with open(config.data_dir / filename) as fp:
         reader = csv.reader(fp, delimiter=",", quotechar='"')
         for row in reader:
-            _handler_args = row, *handler_args
-            call_in_background(handler, *_handler_args, loop=event_loop)
+            _handler_args = row, _dtype, *handler_args
+            if bg:
+                call_in_background(handler, *_handler_args, loop=event_loop)
+            else:
+                handler(*_handler_args)
 
     # TODO: This is not executed. WHY?
     time.sleep(2)
