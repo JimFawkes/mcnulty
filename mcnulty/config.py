@@ -36,6 +36,7 @@ class Config:
         self.db_name = os.getenv("POSTGRES_NAME", default="postgres")
         self.db_user = os.getenv("POSTGRES_USER", default="postgres")
         self.db_password = os.getenv("POSTGRES_PASSWORD", default="")
+        self.dark_sky_api_key = os.getenv("DARK_SKY_API_KEY", default="")
         self.async_lock = asyncio.Lock()
         self.root_dir = ROOT_DIR
         self.project_dir = PROJECT_DIR

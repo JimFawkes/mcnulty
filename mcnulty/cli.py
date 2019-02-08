@@ -12,6 +12,7 @@ import data_types as dt
 from handlers.data_type_handlers import clean_and_store
 from db.connect import run_from_script
 from data_mining.tlc import handle_data_rows_from_file, handle_data_rows_from_url
+from weather.dark_sky import insert_weather_into_db
 from config import Config
 
 _log_file_name = __file__.split("/")[-1].split(".")[0]
@@ -74,6 +75,10 @@ parser.add_argument(
     "--drop_tables", action="store_true", help="Drop all tables in the database."
 )
 
+parser.add_argument(
+    "--import_weather", help="Import weather data for a given year.", type=str
+)
+
 parser.add_argument("--run_pipeline", action="store_true", help="Run pipeline.")
 
 parser.add_argument(
@@ -112,7 +117,16 @@ def create_tables():
 
 
 def drop_tables():
-    run_from_script(config.project_dir / "sql/drop_tables.sql", commit=True)
+    logger.warning(f"DEACTIVATED")
+    # run_from_script(config.project_dir / "sql/drop_tables.sql", commit=True)
+
+
+def import_weather_data(year):
+    year = int(year)
+    if year < 2005 or year > 2020:
+        logger.warning(f"{year} not in range.")
+        return sys.exit(1)
+    insert_weather_into_db(year)
 
 
 def read_from_file(filename, type_):
@@ -126,16 +140,17 @@ def read_from_url(url, type_):
 
 
 def run_pipeline():
-    drop_tables()
-    create_tables()
-    read_from_file("tlc_rate_codes.csv", "RateCodes")
-    read_from_file("tlc_payment_types.csv", "PaymentTypes")
-    read_from_file("taxi_zone_lookup.csv", "Location")
-    read_from_file("nyc_weather_2009_2019.csv", "Weather")
-    read_from_url(
-        "https://s3.amazonaws.com/nyc-tlc/trip+data/yellow_tripdata_2016-12.csv",
-        "TaxiTrip",
-    )
+    logger.warning(f"DEACTIVATED")
+    # drop_tables()
+    # create_tables()
+    # read_from_file("tlc_rate_codes.csv", "RateCodes")
+    # read_from_file("tlc_payment_types.csv", "PaymentTypes")
+    # read_from_file("taxi_zone_lookup.csv", "Location")
+    # read_from_file("nyc_weather_2009_2019.csv", "Weather")
+    # read_from_url(
+    #     "https://s3.amazonaws.com/nyc-tlc/trip+data/yellow_tripdata_2016-12.csv",
+    #     "TaxiTrip",
+    # )
 
 
 def main():
@@ -153,6 +168,10 @@ def main():
     if args.run_pipeline:
         run_pipeline()
         sys.exit(0)
+
+    if args.import_weather:
+        logger.info(f"Import weather")
+        import_weather_data(args.import_weather)
 
     if args.read_from_file:
         if not args.type:
@@ -180,7 +199,7 @@ def main():
         logger.warning(f"Validation part is not yet implemented.")
         sys.exit(1)
 
-    if args.run_and_validate:
+    if args.run_and_validate_all:
         logger.warning(f"Run and Validate part is not yet implemented.")
         sys.exit(1)
 

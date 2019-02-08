@@ -38,6 +38,28 @@ CREATE TABLE IF NOT EXISTS weather (
     sunshine_duration       FLOAT CHECK (sunshine_duration >= 0)
 );
 
+CREATE TABLE IF NOT EXISTS hourly_weather (
+    id                      SERIAL PRIMARY KEY,
+    epoch_time              BIGINT,
+    time                    TIMESTAMP,
+    summary                 VARCHAR(256),
+    icon                    VARCHAR(256),
+    precipIntensity         FLOAT,
+    precipProbability       FLOAT,
+    precipType              FLOAT,
+    temperature             FLOAT,
+    apparentTemperature     FLOAT,
+    dewPoint                FLOAT,
+    humidity                FLOAT,
+    pressure                FLOAT,
+    windSpeed               FLOAT,
+    windGust                FLOAT,
+    windBearing             FLOAT,
+    cloudCover              FLOAT,
+    uvIndex                 FLOAT,
+    visibility              FLOAT
+);
+
 CREATE TABLE IF NOT EXISTS taxi_trip (
     id                      BIGSERIAL PRIMARY KEY,
     vendor_id               INT NOT NULL,
