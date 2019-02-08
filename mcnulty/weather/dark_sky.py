@@ -29,7 +29,6 @@ INSERT INTO hourly_weather (
     icon,
     precipIntensity,
     precipProbability,
-    precipType,
     temperature,
     apparentTemperature,
     dewPoint,
@@ -41,7 +40,7 @@ INSERT INTO hourly_weather (
     cloudCover,
     uvIndex,
     visibility)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
 """
 
 
