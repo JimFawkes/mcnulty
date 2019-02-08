@@ -160,5 +160,3 @@ def insert_weather_into_db(year):
     for epoch_time in epoch_range:
         weather_info = get_weather_info(epoch_time)
         insert_hourly_weather_to_db(weather_info)
-        logger.warning(f"BREAKING for now! epoch: {epoch_time}")
-        return epoch_time
