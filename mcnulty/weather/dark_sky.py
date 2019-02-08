@@ -43,6 +43,10 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
 """
 
 
+class DarkSkyAPIResponseError(Exception):
+    pass
+
+
 @dataclass(order=True)
 class DarkSkyWeather:
     """
@@ -131,9 +135,17 @@ def convert_epoch_to_dt(epoch_time):
 def get_weather_info(epoch_time):
     """Get response from darksky api"""
     api_key = config.dark_sky_api_key
-    response = requests.get(
-        DARK_SKY_API_URL.format(api_key=api_key, epoch_time=epoch_time)
-    )
+    url = DARK_SKY_API_URL.format(api_key=api_key, epoch_time=epoch_time)
+    logger.debug(f"Request URL: {url}")
+    response = requests.get(url)
+    if response.status_code != 200:
+        raise DarkSkyAPIResponseError(
+            f"Got response code: {response.status_code} for epoch: {epoch_time} and url: {url}"
+        )
+    if response.content is None:
+        raise DarkSkyAPIResponseError(
+            f"Got None as content with status_code: {response.status_code} for epoch: {epoch_time} and url: {url}"
+        )
     weather_info = json.loads(response.content)
     return weather_info
 
