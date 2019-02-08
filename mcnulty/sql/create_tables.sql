@@ -46,7 +46,6 @@ CREATE TABLE IF NOT EXISTS hourly_weather (
     icon                    VARCHAR(256),
     precipIntensity         FLOAT,
     precipProbability       FLOAT,
-    precipType              FLOAT,
     temperature             FLOAT,
     apparentTemperature     FLOAT,
     dewPoint                FLOAT,
@@ -57,7 +56,7 @@ CREATE TABLE IF NOT EXISTS hourly_weather (
     windBearing             FLOAT,
     cloudCover              FLOAT,
     uvIndex                 FLOAT,
-    visibility              FLOAT
+    visibility              FLOAT,
 );
 
 CREATE TABLE IF NOT EXISTS taxi_trip (

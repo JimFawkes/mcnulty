@@ -7,6 +7,7 @@ import datetime
 import json
 import pytz
 from dataclasses import dataclass
+from psycopg2 import ProgrammingError, IntegrityError
 from loguru import logger
 
 from db.connect import open_connection, open_cursor
@@ -16,6 +17,7 @@ config = Config()
 
 _log_file_name = __file__.split("/")[-1].split(".")[0]
 logger.add(f"logs/{_log_file_name}.log", rotation="1 day")
+logger.add(f"logs/errors_{_log_file_name}.log", level="ERROR")
 
 DARK_SKY_API_URL = "https://api.darksky.net/forecast/{api_key}/40.77898,-73.96925,{epoch_time}?exclude=currently,minutely,alerts&units=si"
 
@@ -59,7 +61,6 @@ class DarkSkyWeather:
     icon: str = None
     precipIntensity: float = None
     precipProbability: float = None
-    precipType: str = None
     temperature: float = None
     apparentTemperature: float = None
     dewPoint: float = None
@@ -80,7 +81,6 @@ class DarkSkyWeather:
             self.icon,
             self.precipIntensity,
             self.precipProbability,
-            self.precipType,
             self.temperature,
             self.apparentTemperature,
             self.dewPoint,
@@ -96,10 +96,14 @@ class DarkSkyWeather:
 
     def save(self):
         logger.debug(f"Save: {self}")
-        with open_connection() as conn:
-            with open_cursor(conn) as cur:
-                cur.execute(weather_insert_query, self.get_values_as_string())
-                conn.commit()
+        try:
+            with open_connection() as conn:
+                with open_cursor(conn) as cur:
+                    cur.execute(weather_insert_query, self.get_values_as_string())
+                    conn.commit()
+        except (ProgrammingError, IntegrityError) as e:
+            logger.error(f"SAVE FAILED: {self}")
+            logger.error(e)
 
 
 def get_epoch_time_range(start=None, end=None):
@@ -161,6 +165,8 @@ def insert_hourly_weather_to_db(weather_info):
         hour["time"] = convert_epoch_to_dt(hour["epoch_time"])
         if "ozone" in hour:
             hour.pop("ozone")
+        if "percipType" in hour:
+            hour.pop("percipType")
         logger.info(f"{hour}")
         weather = DarkSkyWeather(**hour)
         weather.save()

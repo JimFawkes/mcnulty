@@ -121,6 +121,7 @@ def drop_tables():
     # run_from_script(config.project_dir / "sql/drop_tables.sql", commit=True)
 
 
+@logger.catch()
 def import_weather_data(year):
     year = int(year)
     if year < 2005 or year > 2020:
