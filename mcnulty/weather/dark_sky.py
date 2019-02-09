@@ -113,6 +113,8 @@ def get_epoch_time_range(start=None, end=None):
         start = datetime.datetime(2017, 1, 1, 0, 1, 1)
         end = datetime.datetime(2018, 12, 31, 23, 59, 30)
 
+    # Account for th utc/EST time differnece
+    start = start - datetime.timedelta(days=1)
     logger.info(f"Get Epochs for {start} - {end}")
     epochs = []
     while start < end:
