@@ -94,7 +94,6 @@ class DarkSkyWeather:
         )
 
     def save(self):
-        logger.debug(f"Save: {self}")
         try:
             with open_connection() as conn:
                 with open_cursor(conn) as cur:
@@ -116,14 +115,14 @@ def get_epoch_time_range(start=None, end=None):
     while start < end:
         epoch = int((start - datetime.datetime(1970, 1, 1)).total_seconds())
         epochs.append(epoch)
-        start += datetime.timedelta(hours=1)
+        start += datetime.timedelta(days=1)
 
     return epochs
 
 
 def get_epoch_range_for_year(year):
-    start = datetime.datetime(year, 1, 1, 0, 1, 1)
-    end = datetime.datetime(year, 12, 31, 23, 59, 30)
+    start = datetime.datetime(year, 1, 1, 11, 11, 11)
+    end = datetime.datetime(year, 12, 31, 11, 11, 12)
     epoch_range = get_epoch_time_range(start, end)
     return epoch_range
 
