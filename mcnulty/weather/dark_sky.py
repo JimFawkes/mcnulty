@@ -29,6 +29,7 @@ INSERT INTO hourly_weather (
     icon,
     precip_intensity,
     precip_probability,
+    precip_accumulation,
     temperature,
     apparent_temperature,
     dew_point,
@@ -40,7 +41,7 @@ INSERT INTO hourly_weather (
     cloud_cover,
     uv_index,
     visibility)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
 """
 
 
@@ -60,6 +61,7 @@ class DarkSkyWeather:
     icon: str = None
     precipIntensity: float = None
     precipProbability: float = None
+    precipAccumulation: float = None
     temperature: float = None
     apparentTemperature: float = None
     dewPoint: float = None
@@ -80,6 +82,7 @@ class DarkSkyWeather:
             self.icon,
             self.precipIntensity,
             self.precipProbability,
+            self.precipAccumulation,
             self.temperature,
             self.apparentTemperature,
             self.dewPoint,
