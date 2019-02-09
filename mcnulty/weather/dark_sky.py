@@ -164,8 +164,8 @@ def insert_hourly_weather_to_db(weather_info):
         hour["time"] = convert_epoch_to_dt(hour["epoch_time"])
         if "ozone" in hour:
             hour.pop("ozone")
-        if "percipType" in hour:
-            hour.pop("percipType")
+        if "precipType" in hour:
+            hour.pop("precipType")
         logger.info(f"{hour}")
         weather = DarkSkyWeather(**hour)
         weather.save()
