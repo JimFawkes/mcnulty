@@ -166,9 +166,12 @@ def insert_hourly_weather_to_db(weather_info):
             hour.pop("ozone")
         if "precipType" in hour:
             hour.pop("precipType")
-        logger.info(f"{hour}")
-        weather = DarkSkyWeather(**hour)
-        weather.save()
+        try:
+            weather = DarkSkyWeather(**hour)
+            weather.save()
+        except (TypeError, AttributeError, KeyError) as e:
+            logger.error(f"GOT ERROR for DATA: {hour}")
+            logger.error(e)
 
 
 def insert_weather_into_db(year):
